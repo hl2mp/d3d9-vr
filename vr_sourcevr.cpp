@@ -786,8 +786,8 @@ void CSourceVR::OverrideView( CViewSetup *pSetup )
 	GetEyeProjectionMatrix ( &m_View[vr::Eye_Left].m_ViewToProjection, vr::Eye_Left,  pSetup->zNear, pSetup->zFar, 1.0f/m_WorldZoomScale );
 	GetEyeProjectionMatrix ( &m_View[vr::Eye_Right].m_ViewToProjection, vr::Eye_Right, pSetup->zNear, pSetup->zFar, 1.0f/m_WorldZoomScale );
 
-	CalcFovFromProjection ( &m_View[vr::Eye_Left].fov, m_View[vr::Eye_Left].m_ViewToProjection );
-	CalcFovFromProjection ( &m_View[vr::Eye_Right].fov, m_View[vr::Eye_Right].m_ViewToProjection );
+	CalcFovFromProjection ( &m_View[vr::Eye_Left].fov, &m_View[vr::Eye_Left].m_flAspectRatio, m_View[vr::Eye_Left].m_ViewToProjection );
+	CalcFovFromProjection ( &m_View[vr::Eye_Right].fov, &m_View[vr::Eye_Right].m_flAspectRatio, m_View[vr::Eye_Right].m_ViewToProjection );
 
 	C_BaseEntity *pPlayer = GetLocalPlayer();
 	if( pPlayer )

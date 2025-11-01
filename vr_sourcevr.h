@@ -32,35 +32,32 @@ extern IMatSystemSurface *g_pMatSystemSurface;
 
 class CUserCmd;
 
-inline void CalcFovFromProjection(float *pFov, const VMatrix &proj, bool bUseConservative = true)
+inline void CalcFovFromProjection(float *pFov, float *pAspectRatio, const VMatrix &proj)
 {
     float xscale = proj.m[0][0];
     float xoffset = proj.m[0][2];
     float yscale = proj.m[1][1]; 
     float yoffset = proj.m[1][2];
 
-    if (bUseConservative) {
-        // Conservative approach: use maximum possible FOV
-        // Important for VR to avoid clipping
-        float ratio1 = fabsf((-1.0f - xoffset) / xscale);
-        float ratio2 = fabsf((1.0f - xoffset) / xscale);
-        float ratio3 = fabsf((-1.0f - yoffset) / yscale);
-        float ratio4 = fabsf((1.0f - yoffset) / yscale);
-        
-        float maxRatio = ratio1;
-        if (ratio2 > maxRatio) maxRatio = ratio2;
-        if (ratio3 > maxRatio) maxRatio = ratio3;
-        if (ratio4 > maxRatio) maxRatio = ratio4;
-        
-        *pFov = 2.0f * RAD2DEG(atanf(maxRatio));
-    } else {
-        // Balanced approach: average of left/right and top/bottom
-        float fovX = RAD2DEG(atanf((1.0f - xoffset) / xscale) + atanf((-1.0f - xoffset) / -xscale));
-        float fovY = RAD2DEG(atanf((1.0f - yoffset) / yscale) + atanf((-1.0f - yoffset) / -yscale));
-        *pFov = (fovX > fovY) ? fovX : fovY;
+    // Calculate aspect ratio
+    if( pAspectRatio ) {
+        *pAspectRatio = fabsf(yscale / xscale);
     }
 
-	//*pFov = 110;
+    // Conservative FOV calculation
+    float ratios[4] = {
+        fabsf((-1.0f - xoffset) / xscale),
+        fabsf((1.0f - xoffset) / xscale), 
+        fabsf((-1.0f - yoffset) / yscale),
+        fabsf((1.0f - yoffset) / yscale)
+    };
+        
+    float maxRatio = ratios[0];
+    for( int i = 1; i < 4; i++ ) {
+        if( ratios[i] > maxRatio ) maxRatio = ratios[i];
+    }
+        
+    *pFov = 2.0f * RAD2DEG( atanf( maxRatio ) );
 }
 
 inline void ComposeProjectionTransform(float fLeft, float fRight, 
