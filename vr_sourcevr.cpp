@@ -980,15 +980,15 @@ void CSourceVR::PostPresent()
 			m_PlayerViewOrigin = Vector( -3163, 2949, 72 );
 		}
 
-		//if( !engine->IsInGame() )
-		//{
-		//	extern void CreateLoadingDialog();
-		//	CreateLoadingDialog();
-		//	m_CreatedVRTextures = false;
-		//	m_fPause = engine->Time() + 1.0;
-		//	vr::VRCompositor()->ClearLastSubmittedFrame();
-		//	engine->ClientCmd_Unrestricted("map_background dm_lockdown\n");
-		//}
+		if( !engine->IsInGame() )
+		{
+			extern void CreateLoadingDialog();
+			CreateLoadingDialog();
+			m_CreatedVRTextures = false;
+			m_fPause = engine->Time() + 1.0;
+			vr::VRCompositor()->ClearLastSubmittedFrame();
+			engine->ClientCmd_Unrestricted("map_background dm_lockdown\n");
+		}
 	}
 
 	if( m_CreatedVRTextures )
