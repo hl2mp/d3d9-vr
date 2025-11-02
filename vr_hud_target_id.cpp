@@ -58,19 +58,14 @@ public:
 CTargetID::CTargetID()
 : BaseClass(NULL, "TargetID2")
 {
-	//SetParent( parent );
-	
 	vgui::VPANEL pRoot = enginevgui->GetPanel( PANEL_ROOT );
 	vgui::VPANEL pChild = VFindChildByName( pRoot, "TargetID" );
 	g_pVGuiPanel->DeletePanel( pChild );
-	//g_pVGuiPanel->SetParent( pChild, NULL );
 
 	SetSize( m_VR->m_RenderWidth, m_VR->m_RenderHeight );
 
 	m_flLastChangeTime = 0.0;
 	m_iLastEntIndex = 0;
-
-	//SetForceStereoRenderToFrameBuffer( true );
 }
 
 

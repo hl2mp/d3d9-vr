@@ -62,7 +62,7 @@ public:
 			return;
 		}
 
-		if (GetLocalPlayer() && !m_hHandLeft)
+		if (engine->IsInGame() && GetLocalPlayer() && !m_hHandLeft)
 			Init();
 
 		if (m_hHandLeft)
@@ -340,7 +340,7 @@ void CSourceVR::RenderHud()
 		DrawPanelIn3DSpace( m_pHudChild[HudSuit], m_PanelToWorld, m_Width, m_Height, m_Width*worldScale, m_Height*worldScale );
 		DrawPanelIn3DSpace( m_pHudChild[TeamDisplay], m_PanelToWorld, m_Width, m_Height, m_Width*worldScale, m_Height*worldScale );
 
-		//Рисуем индиктора урона, и fade
+		//Рисуем индиктора урона
 		{
 			if( !m_pHudChild[HudDamageIndicator] )
 			{
@@ -355,9 +355,6 @@ void CSourceVR::RenderHud()
 				g_pVGuiPanel->SetParent( m_pHudChild[HudDamageIndicator], NULL );
 			}
 
-			VMatrix m_PanelToWorld;
-			m_PanelToWorld.SetupMatrixOrgAngles( m_HeadPosAbs, m_HeadAngAbs );
-
 			static const float fAspectRatio = (float)m_RenderWidth/(float)m_RenderHeight;
 			float fHFOV = m_View[vr::Eye_Left].fov;
 			float fVFOV = m_View[vr::Eye_Left].fov/fAspectRatio;
@@ -365,6 +362,9 @@ void CSourceVR::RenderHud()
 			const float fHudForward = 500.0;
 			float fHudHalfWidth = tan( DEG2RAD( fHFOV * 0.5f ) ) * fHudForward * 0.9;
 			float fHudHalfHeight = tan( DEG2RAD( fVFOV * 0.5f ) ) * fHudForward * 0.9;
+
+			VMatrix m_PanelToWorld;
+			m_PanelToWorld.SetupMatrixOrgAngles( m_HeadPosAbs, m_HeadAngAbs );
 
 			Vector vHUDOrigin = m_PanelToWorld.GetTranslation() + m_PanelToWorld.GetForward() * fHudForward;
 			m_PanelToWorld.SetupMatrixOrgAngles(vHUDOrigin, m_HeadAngAbs );
@@ -1175,7 +1175,7 @@ void CSourceVR::ProcessMenuInput()
 			return;
 
 		// Настраиваемая задержка (мин 0.1с, макс 1.0с)
-		float delay = 0.1f + (0.9f * (1.0f - absDelta));
+		float delay = 0.05f + (0.9f * (1.0f - absDelta));
 		m_Wait = currentTime + delay;
 
 		// Прокрутка в нужном направлении
