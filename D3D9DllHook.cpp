@@ -86,7 +86,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 
 				rename("hl2mp/custom/vr.vpk_","hl2mp/custom/vr.vpk");
 				CommandLine()->AppendParm( "-dxlevel 95", NULL );
-				CommandLine()->AppendParm( "-sw -w 1280 -h 960", NULL );
+				CommandLine()->AppendParm( "-sw -w 1280 -h 1024", NULL );
 				CommandLine()->AppendParm( "-insecure", NULL );
 				CommandLine()->AppendParm( "-novid", NULL );
 				CommandLine()->AppendParm( "+mat_queue_mode 0", NULL );

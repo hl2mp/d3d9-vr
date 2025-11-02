@@ -340,6 +340,43 @@ void CSourceVR::RenderHud()
 		DrawPanelIn3DSpace( m_pHudChild[HudSuit], m_PanelToWorld, m_Width, m_Height, m_Width*worldScale, m_Height*worldScale );
 		DrawPanelIn3DSpace( m_pHudChild[TeamDisplay], m_PanelToWorld, m_Width, m_Height, m_Width*worldScale, m_Height*worldScale );
 
+		//Рисуем индиктора урона, и fade
+		{
+			if( !m_pHudChild[HudDamageIndicator] )
+			{
+				m_pHudChild[HudDamageIndicator] = VFindChildByName( pRoot, "HudDamageIndicator" );
+
+				vgui::Panel* pInfoPanel = g_pVGuiPanel->GetPanel(m_pHudChild[HudDamageIndicator], "ClientDLL");
+				if(pInfoPanel)
+				{
+					pInfoPanel->SetForceStereoRenderToFrameBuffer( false );
+				}
+
+				g_pVGuiPanel->SetParent( m_pHudChild[HudDamageIndicator], NULL );
+			}
+
+			VMatrix m_PanelToWorld;
+			m_PanelToWorld.SetupMatrixOrgAngles( m_HeadPosAbs, m_HeadAngAbs );
+
+			static const float fAspectRatio = (float)m_RenderWidth/(float)m_RenderHeight;
+			float fHFOV = m_View[vr::Eye_Left].fov;
+			float fVFOV = m_View[vr::Eye_Left].fov/fAspectRatio;
+
+			const float fHudForward = 500.0;
+			float fHudHalfWidth = tan( DEG2RAD( fHFOV * 0.5f ) ) * fHudForward * 0.9;
+			float fHudHalfHeight = tan( DEG2RAD( fVFOV * 0.5f ) ) * fHudForward * 0.9;
+
+			Vector vHUDOrigin = m_PanelToWorld.GetTranslation() + m_PanelToWorld.GetForward() * fHudForward;
+			m_PanelToWorld.SetupMatrixOrgAngles(vHUDOrigin, m_HeadAngAbs );
+
+			VMatrix matOffset;
+			matOffset.SetupMatrixOrgAngles( Vector( 0, fHudHalfWidth, fHudHalfHeight ), QAngle( 0, -90, 90 ) );
+
+			m_PanelToWorld = m_PanelToWorld * matOffset;
+
+			DrawPanelIn3DSpace( m_pHudChild[HudDamageIndicator], m_PanelToWorld, m_Width, m_Height, fHudHalfWidth*2, fHudHalfHeight*2 );
+		}
+
 		//Рисуем прицел
 		QAngle va;
 		engine->GetViewAngles( va );
@@ -943,15 +980,15 @@ void CSourceVR::PostPresent()
 			m_PlayerViewOrigin = Vector( -3163, 2949, 72 );
 		}
 
-		if( !engine->IsInGame() )
-		{
-			extern void CreateLoadingDialog();
-			CreateLoadingDialog();
-			m_CreatedVRTextures = false;
-			m_fPause = engine->Time() + 1.0;
-			vr::VRCompositor()->ClearLastSubmittedFrame();
-			engine->ClientCmd_Unrestricted("map_background dm_lockdown\n");
-		}
+		//if( !engine->IsInGame() )
+		//{
+		//	extern void CreateLoadingDialog();
+		//	CreateLoadingDialog();
+		//	m_CreatedVRTextures = false;
+		//	m_fPause = engine->Time() + 1.0;
+		//	vr::VRCompositor()->ClearLastSubmittedFrame();
+		//	engine->ClientCmd_Unrestricted("map_background dm_lockdown\n");
+		//}
 	}
 
 	if( m_CreatedVRTextures )
