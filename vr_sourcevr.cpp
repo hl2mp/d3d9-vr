@@ -37,7 +37,6 @@ public:
 	~CVRHands()
 	{
 		m_kvBones->deleteThis();
-		m_kvBones = nullptr;
 
 		if( m_hHandLeft )
 			m_hHandLeft->Release();
@@ -80,6 +79,16 @@ public:
 };
 
 CVRHands *g_pVRHands;
+
+void ReCreateVRHands()
+{
+	if( g_pVRHands )
+	{
+		delete g_pVRHands;
+	}
+
+	g_pVRHands = new CVRHands();
+}
 
 const char *g_pEVRFinger[] =
 {
@@ -477,10 +486,6 @@ void CSourceVR::BuildTransformations( void *ecx, CStudioHdr *hdr, Vector *pos, Q
 
 	if( g_pVRHands && g_pVRHands->m_hHandLeft == ecx )
 	{
-			LARGE_INTEGER frequency, start, end;
-    QueryPerformanceFrequency(&frequency); // Получаем частоту таймера
-    QueryPerformanceCounter(&start);
-
 		int lHand = Studio_BoneIndexByName( hdr, "ValveBiped.Bip01_L_Hand" );
 		if( lHand != -1 && !g_pVRHands->m_bBipod )
 		{
@@ -538,14 +543,6 @@ void CSourceVR::BuildTransformations( void *ecx, CStudioHdr *hdr, Vector *pos, Q
 				}
 			}
 		}
-
-			QueryPerformanceCounter(&end);        // Засекаем конец
-
-    // Вычисляем время в миллисекундах
-    double elapsedTime = (end.QuadPart - start.QuadPart) * 1000.0 / frequency.QuadPart;
-
-    // Выводим результат через Msg()
-    Msg("Time taken: %.2f ms\n", elapsedTime);
 	}
 }
 
@@ -737,7 +734,6 @@ void CSourceVR::DoDistortionProcessing( vr::EVREye eEye )
 		pRenderContext->ClearColor4ub(0, 0, 0, 0);
 		pRenderContext->ClearBuffers(true, false);
 		pRenderContext->OverrideAlphaWriteEnable(true, true);
-
 		render->VGui_Paint( PAINT_UIPANELS | PAINT_CURSOR | PAINT_INGAMEPANELS );
 		pRenderContext->OverrideAlphaWriteEnable(false, true);
 		render->PopView(NULL);
@@ -958,12 +954,6 @@ void CSourceVR::PostPresent()
 	{
 		if( m_bLoadMainMenu || engine->IsDrawingLoadingImage() )
 		{
-			if( g_pVRHands )
-			{
-				delete g_pVRHands;
-				g_pVRHands = nullptr;
-			}
-
 			m_CreatedVRTextures = false;
 			m_fPause = engine->Time() + 1.0;
 			vr::VRCompositor()->ClearLastSubmittedFrame();
@@ -977,7 +967,7 @@ void CSourceVR::PostPresent()
 
 	if( !m_CreatedVRTextures && m_fPause <= engine->Time() )
 	{
-		g_pVRHands = new CVRHands();
+		ReCreateVRHands();
 
 		CreateRenderTargets( materials );
 
