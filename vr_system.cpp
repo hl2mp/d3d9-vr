@@ -55,7 +55,7 @@ void BaseVRSystem::PostPresent( IDirect3DDevice9Ex *pD3D9 )
 		while( pEventQuery->GetData( nullptr, 0, D3DGETDATA_FLUSH ) != S_OK );
 			pEventQuery->Release();
 	}
-	
+
 	m_VR->PostPresent();
 }
 

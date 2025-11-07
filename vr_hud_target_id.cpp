@@ -32,7 +32,7 @@ class CTargetIDAutoCreate
 public:
     void Init()
     {
-		while( !m_VR->m_bActive )
+		while( !m_VR->m_bActive || !m_VR->m_CreatedVRTextures )
 			Sleep(50);
 
 		CTargetID *MyPanel = new CTargetID();

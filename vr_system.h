@@ -5,11 +5,11 @@
 
 enum TextureID
 {
-	Texture_None = -1,
 	Texture_LeftEye,
 	Texture_RightEye,
-	Texture_HUD,
-	Texture_Blank
+
+	//Добавлять текстуры только ниже!!!
+	Texture_HUD
 };
 
 class ITexture;

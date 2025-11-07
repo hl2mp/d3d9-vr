@@ -14,18 +14,8 @@ public:
 	CVRHands()
 	{
 		m_hHandRight = NULL;
-		m_hHandLeft = NULL;
-		m_vrhands = NULL;
-		m_kvBones = NULL;
 		m_bBipod = false;
-		m_vecOffsetLeft = vec3_origin;
-		m_vecOffsetRight = vec3_origin;
-	};
 
-	~CVRHands(){};
-
-	void Init()
-	{
 		m_kvBones = new KeyValues("VRBones");
 		m_kvBones->LoadFromFile(filesystem, "vrbones.txt", "GAME");
 
@@ -42,43 +32,36 @@ public:
 
 		m_vecOffsetLeft = Vector( -5, 1, -3 );
 		m_vecOffsetRight = Vector( -5, -1, -3 );
-	}
+	};
+
+	~CVRHands()
+	{
+		m_kvBones->deleteThis();
+		m_kvBones = nullptr;
+
+		if( m_hHandLeft )
+			m_hHandLeft->Release();
+
+		if( m_hHandRight )
+			m_hHandRight->Release();
+	};
 
 	void Update()
 	{
-		if (!engine->IsInGame()) {
-			m_hHandRight = NULL;
-			m_hHandLeft = NULL;
-			m_vrhands = NULL;
-
-			if( m_kvBones )
-			{
-				m_kvBones->deleteThis();
-				m_kvBones = NULL;
-			}
-
-			m_vecOffsetLeft = vec3_origin;
-			m_vecOffsetRight = vec3_origin;
-			return;
-		}
-
-		if (engine->IsInGame() && GetLocalPlayer() && !m_hHandLeft)
-			Init();
-
 		if (m_hHandLeft)
 		{
 			m_hHandLeft->SetAbsOrigin( m_VR->m_HeadPosAbs );
 		}
 
-		C_BaseEntity* pViewModel = GetViewModel();
-		if (pViewModel && m_hHandRight)
-		{
-			const model_t* pModel = pViewModel->GetModel();
-			if( pModel )
-				m_ViewModelName = modelinfo->GetModelName(pViewModel->GetModel() );
+		//C_BaseEntity* pViewModel = GetViewModel();
+		//if (pViewModel && m_hHandRight)
+		//{
+		//	const model_t* pModel = pViewModel->GetModel();
+		//	if( pModel )
+		//		m_ViewModelName = modelinfo->GetModelName(pViewModel->GetModel() );
 
-			m_hHandRight->FollowEntity(pViewModel);
-		}
+		//	m_hHandRight->FollowEntity(pViewModel);
+		//}
 	};
 
 	const model_t *m_vrhands;
@@ -161,8 +144,6 @@ Vector interpolateVector( float t, const Vector& v1, const Vector& v2 ) {
 
 void DrawPanelIn3DSpace( vgui::VPANEL pRootPanel, const VMatrix &panelCenterToWorld, int nPixelWidth, int nPixelHeight, float flWorldWidth, float flWorldHeight )
 {
-	g_pVGuiSurface->SolveTraverse( pRootPanel, false );
-
 	CMatRenderContextPtr pRenderContext( materials );
 	//pRenderContext->OverrideDepthEnable( true, false );
 
@@ -182,6 +163,7 @@ void DrawPanelIn3DSpace( vgui::VPANEL pRootPanel, const VMatrix &panelCenterToWo
 	pRenderContext->MatrixMode( MATERIAL_VIEW );
 	pRenderContext->PushMatrix();
 
+	g_pVGuiSurface->SolveTraverse( pRootPanel, false );
 	g_pVGuiPanel->Repaint( pRootPanel );
 	g_pVGuiPanel->PaintTraverse( pRootPanel, true, false  );
 
@@ -268,7 +250,7 @@ void CSourceVR::RenderHud()
 	}
 
 	if( g_pVRHands->m_hHandLeft )
-			g_pVRHands->m_hHandLeft->DrawModel( STUDIO_RENDER );
+		g_pVRHands->m_hHandLeft->DrawModel( STUDIO_RENDER );
 
 	C_BaseEntity *pPlayer = GetLocalPlayer();
 	if( !pPlayer || !pPlayer->IsAlive() )
@@ -288,8 +270,8 @@ void CSourceVR::RenderHud()
 		//		pViewModel->DrawModel( STUDIO_RENDER );
 		//	}
 		//}
-
-		vgui::VPANEL pRoot = enginevgui->GetPanel( PANEL_ROOT );
+		/*
+		static vgui::VPANEL pRoot = enginevgui->GetPanel( PANEL_ROOT );
 
 		Vector vecLeft, vecRight;
 		QAngle angLeft, angRight;
@@ -375,7 +357,7 @@ void CSourceVR::RenderHud()
 			m_PanelToWorld = m_PanelToWorld * matOffset;
 
 			DrawPanelIn3DSpace( m_pHudChild[HudDamageIndicator], m_PanelToWorld, m_Width, m_Height, fHudHalfWidth*2, fHudHalfHeight*2 );
-		}
+		}*/
 
 		//Рисуем прицел
 		QAngle va;
@@ -493,8 +475,12 @@ void CSourceVR::BuildTransformations( void *ecx, CStudioHdr *hdr, Vector *pos, Q
 		AngleMatrix( m_RightControllerAngAbs, m_RightControllerPosAbs, cameraTransform );
 	}
 
-	if( g_pVRHands->m_hHandLeft == ecx )
+	if( g_pVRHands && g_pVRHands->m_hHandLeft == ecx )
 	{
+			LARGE_INTEGER frequency, start, end;
+    QueryPerformanceFrequency(&frequency); // Получаем частоту таймера
+    QueryPerformanceCounter(&start);
+
 		int lHand = Studio_BoneIndexByName( hdr, "ValveBiped.Bip01_L_Hand" );
 		if( lHand != -1 && !g_pVRHands->m_bBipod )
 		{
@@ -552,6 +538,14 @@ void CSourceVR::BuildTransformations( void *ecx, CStudioHdr *hdr, Vector *pos, Q
 				}
 			}
 		}
+
+			QueryPerformanceCounter(&end);        // Засекаем конец
+
+    // Вычисляем время в миллисекундах
+    double elapsedTime = (end.QuadPart - start.QuadPart) * 1000.0 / frequency.QuadPart;
+
+    // Выводим результат через Msg()
+    Msg("Time taken: %.2f ms\n", elapsedTime);
 	}
 }
 
@@ -578,8 +572,6 @@ void CSourceVR::Activate()
 
 	vr::VRCompositor()->SetTrackingSpace( vr::TrackingUniverseSeated );
 
-	g_pVRHands = new CVRHands();
-
 	m_bActive = true;
 }
 
@@ -602,7 +594,6 @@ void CSourceVR::CreateRenderTargets( IMaterialSystem *pMaterialSystem )
 		//engine->ClientCmd_Unrestricted( "exec autoexec\n" );
 	}
 	
-	GetVRSystem()->NextCreateTextureIs( Texture_HUD );
 	GetVRSystem()->m_SharedTextureHolder[Texture_HUD].pTexture = pMaterialSystem->CreateNamedRenderTargetTextureEx("_rt_gui", m_Width, m_Height, RT_SIZE_NO_CHANGE, pMaterialSystem->GetBackBufferFormat(), MATERIAL_RT_DEPTH_SHARED, TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT, CREATERENDERTARGETFLAGS_HDR );
 
 	GetVRSystem()->NextCreateTextureIs( Texture_LeftEye );
@@ -670,8 +661,6 @@ void CSourceVR::RenderViewDesktop()
 		outWidth-1, heightOffset + outHeight-1,
 		eyeWidth, eyeHeight
 	);
-
-	pRenderContext.SafeRelease();
 
 	//Рендрем HUD и меню на рабочий стол если видно курсор (Оно надо?)
 	if(!g_pVGuiSurface->IsCursorVisible())
@@ -802,6 +791,13 @@ bool CSourceVR::GetEyeProjectionMatrix ( VMatrix *pResult, vr::EVREye eEye, floa
 
 void CSourceVR::OverrideView( CViewSetup *pSetup )
 {
+	UpdatePoses();
+
+	if( g_pVGuiSurface->IsCursorVisible() )
+		ProcessMenuInput();
+	
+	HandleSkeletalInput();
+
 	if( !m_CreatedVRTextures || !g_pVGuiSurface->IsCursorVisible() )
 	{
 		m_PlayerViewOrigin = pSetup->origin;
@@ -810,6 +806,9 @@ void CSourceVR::OverrideView( CViewSetup *pSetup )
 	{
 		pSetup->origin = m_PlayerViewOrigin;
 	}
+
+	if( !m_CreatedVRTextures )
+		return;
 
 	pSetup->width = m_RenderWidth;
 	pSetup->height = m_RenderHeight;
@@ -827,7 +826,6 @@ void CSourceVR::OverrideView( CViewSetup *pSetup )
 		m_WorldZoomScale = 1.0;
 	}
 
-
 	m_View[vr::Eye_Left].m_bViewToProjectionOverride = true;
 	GetEyeProjectionMatrix ( &m_View[vr::Eye_Left].m_ViewToProjection, vr::Eye_Left,  pSetup->zNear, pSetup->zFar, 1.0f/m_WorldZoomScale );
 	CalcFovFromProjection ( &m_View[vr::Eye_Left].fov, &m_View[vr::Eye_Left].m_flAspectRatio, m_View[vr::Eye_Left].m_ViewToProjection );
@@ -839,20 +837,20 @@ void CSourceVR::OverrideView( CViewSetup *pSetup )
 	C_BaseEntity *pPlayer = GetLocalPlayer();
 	if( pPlayer )
 	{
-		if( !g_pVGuiSurface->IsCursorVisible() )
-		{
-			C_BaseEntity *pVehicleAnimating = pPlayer->GetEntPropEnt("m_hVehicle");
-			if( pVehicleAnimating )
-			{
-				int eyeAttachmentIndex = pVehicleAnimating->LookupAttachment( "vehicle_driver_eyes" );
+		//if( !g_pVGuiSurface->IsCursorVisible() )
+		//{
+		//	C_BaseEntity *pVehicleAnimating = pPlayer->GetEntPropEnt("m_hVehicle");
+		//	if( pVehicleAnimating )
+		//	{
+		//		int eyeAttachmentIndex = pVehicleAnimating->LookupAttachment( "vehicle_driver_eyes" );
 
-				Vector vehicleEyeOrigin;
-				QAngle vehicleEyeAngles;
-				pVehicleAnimating->GetAttachment( eyeAttachmentIndex, vehicleEyeOrigin, vehicleEyeAngles );
+		//		Vector vehicleEyeOrigin;
+		//		QAngle vehicleEyeAngles;
+		//		pVehicleAnimating->GetAttachment( eyeAttachmentIndex, vehicleEyeOrigin, vehicleEyeAngles );
 
-				m_RotationOffset = vehicleEyeAngles.y;
-			}
-		}
+		//		m_RotationOffset = vehicleEyeAngles.y;
+		//	}
+		//}
 
 
 		////pPlayer->SetEntPropSend( "m_iFOV", (int)m_View[vr::Eye_Left].fov );
@@ -946,8 +944,6 @@ bool CSourceVR::RenderView( void* rcx, CViewSetup &viewRender, int nClearFlags, 
 	hkRenderView.fOriginal( rcx, m_View[vr::Eye_Right], nClearFlags, whatToDraw );
 	DoDistortionProcessing( vr::Eye_Right );
 
-	pRenderContext.SafeRelease();
-
 	RenderViewDesktop();
 
 	return false;
@@ -962,6 +958,12 @@ void CSourceVR::PostPresent()
 	{
 		if( m_bLoadMainMenu || engine->IsDrawingLoadingImage() )
 		{
+			if( g_pVRHands )
+			{
+				delete g_pVRHands;
+				g_pVRHands = nullptr;
+			}
+
 			m_CreatedVRTextures = false;
 			m_fPause = engine->Time() + 1.0;
 			vr::VRCompositor()->ClearLastSubmittedFrame();
@@ -975,6 +977,8 @@ void CSourceVR::PostPresent()
 
 	if( !m_CreatedVRTextures && m_fPause <= engine->Time() )
 	{
+		g_pVRHands = new CVRHands();
+
 		CreateRenderTargets( materials );
 
 		if( engine->IsLevelMainMenuBackground() )
@@ -990,7 +994,7 @@ void CSourceVR::PostPresent()
 			m_PlayerViewOrigin = Vector( -3163, 2949, 72 );
 		}
 
-		if( !engine->IsInGame() )
+		if( !engine->IsInGame() && !CommandLine()->CheckParm( "-nobackground" ) )
 		{
 			extern void CreateLoadingDialog();
 			CreateLoadingDialog();
@@ -1005,14 +1009,8 @@ void CSourceVR::PostPresent()
 	{
 		vr::VRCompositor()->Submit( vr::Eye_Left, &GetVRSystem()->m_SharedTextureHolder[vr::Eye_Left].m_VRTexture );
 		vr::VRCompositor()->Submit( vr::Eye_Right, &GetVRSystem()->m_SharedTextureHolder[vr::Eye_Right].m_VRTexture );
+		vr::VRCompositor()->PostPresentHandoff();
 	}
-
-	UpdatePoses();
-
-	if( g_pVGuiSurface->IsCursorVisible() )
-		ProcessMenuInput();
-	
-	HandleSkeletalInput();
 }
 
 
@@ -1185,7 +1183,7 @@ void CSourceVR::ProcessMenuInput()
 			return;
 
 		// Настраиваемая задержка (мин 0.1с, макс 1.0с)
-		float delay = 0.05f + (0.9f * (1.0f - absDelta));
+		float delay = 0.01f + (0.9f * (1.0f - absDelta));
 		m_Wait = currentTime + delay;
 
 		// Прокрутка в нужном направлении
