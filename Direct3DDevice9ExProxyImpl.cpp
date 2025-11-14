@@ -19,9 +19,11 @@ HRESULT WINAPI Direct3DDevice9ExProxyImpl::Present(CONST RECT* pSourceRect,CONST
 {
 	HRESULT hr = S_OK;
 
+	GetVRSystem()->PrePresent();	
+
 	hr =  Direct3DDevice9ExWrapper::PresentEx( pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion, 0 );
 
-	GetVRSystem()->PostPresent( this );	
+	GetVRSystem()->PostPresent( this );
 
 	return hr;
 }
@@ -30,6 +32,8 @@ HRESULT WINAPI Direct3DDevice9ExProxyImpl::PresentEx(CONST RECT* pSourceRect,CON
 {
 	HRESULT hr = S_OK;
 	
+	GetVRSystem()->PrePresent();
+
 	hr = Direct3DDevice9ExWrapper::PresentEx( pSourceRect, pDestRect, hDestWindowOverride, pDirtyRegion, flags );
 	
 	GetVRSystem()->PostPresent( this );

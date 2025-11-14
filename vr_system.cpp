@@ -40,6 +40,13 @@ void MsgD3D9(const char* fmt, ...)
 }
 
 
+void BaseVRSystem::PrePresent()
+{
+	if( !m_VR->m_bActive )
+		return;	
+}
+
+
 void BaseVRSystem::PostPresent( IDirect3DDevice9Ex *pD3D9 )
 {
 	if( !m_VR->m_bActive )
@@ -56,7 +63,7 @@ void BaseVRSystem::PostPresent( IDirect3DDevice9Ex *pD3D9 )
 			pEventQuery->Release();
 	}
 
-	m_VR->PostPresent();
+	//m_VR->PostPresent();
 }
 
 

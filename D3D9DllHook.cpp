@@ -92,7 +92,7 @@ BOOL APIENTRY DllMain( HMODULE hModule,
 				CommandLine()->AppendParm( "+mat_queue_mode 0", NULL );
 				CommandLine()->AppendParm( "+mat_vrmode_adapter -1", NULL );
 				CommandLine()->AppendParm( "+r_flashlightdepthtexture 0", NULL );
-				//CommandLine()->AppendParm( "+r_shadowrendertotexture 0", NULL );
+				CommandLine()->AppendParm( "+r_shadowrendertotexture 0", NULL );
 				CommandLine()->AppendParm( "+r_teeth 0", NULL );
 				CommandLine()->AppendParm( "+mat_antialias 0", NULL );
 				CommandLine()->AppendParm( "+building_cubemaps 1", NULL );

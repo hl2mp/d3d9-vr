@@ -568,6 +568,9 @@ void CSourceVR::Activate()
     SetActionManifest("action_manifest.json");
 
 	vr::VRCompositor()->SetTrackingSpace( vr::TrackingUniverseSeated );
+	//vr::VRCompositor()->SetExplicitTimingMode(vr::VRCompositorTimingMode_Explicit_RuntimePerformsPostPresentHandoff);
+
+	engine->ClientCmd_Unrestricted( "exec hl2mp_vr\n" );
 
 	m_bActive = true;
 }
@@ -586,9 +589,6 @@ void CSourceVR::CreateRenderTargets( IMaterialSystem *pMaterialSystem )
 		screenMatKV->SetString( "$basetexture", "leftEye0" );
 		m_ScreenMat = pMaterialSystem->CreateMaterial( "vr_screen_rt", screenMatKV );
 		m_ScreenMat->AddRef();
-
-		//engine->ClientCmd_Unrestricted( "hud_reloadscheme\n" );
-		//engine->ClientCmd_Unrestricted( "exec autoexec\n" );
 	}
 	
 	GetVRSystem()->m_SharedTextureHolder[Texture_HUD].pTexture = pMaterialSystem->CreateNamedRenderTargetTextureEx("_rt_gui", m_Width, m_Height, RT_SIZE_NO_CHANGE, pMaterialSystem->GetBackBufferFormat(), MATERIAL_RT_DEPTH_SHARED, TEXTUREFLAGS_CLAMPS | TEXTUREFLAGS_CLAMPT, CREATERENDERTARGETFLAGS_HDR );
@@ -634,18 +634,15 @@ void CSourceVR::AcquireNewZeroPose()
 
 void CSourceVR::RenderViewDesktop()
 {
-	if( !m_ScreenMat || !m_CreatedVRTextures )
+	if( !m_CreatedVRTextures )
 		return;
 
 	CMatRenderContextPtr pRenderContext( materials );
 	pRenderContext->SetRenderTarget( NULL );
 
-	int eyeWidth = m_RenderWidth;
-	int eyeHeight = m_RenderHeight;
-
-	float outWidth = (float)eyeWidth;
+	float outWidth = (float)m_RenderWidth;
 	float outHeight = outWidth * ( (float)m_Height / (float)m_Width );
-	float heightOffset = ( eyeHeight - outHeight ) / 2;
+	float heightOffset = ( m_RenderHeight - outHeight ) / 2;
 
 	pRenderContext->ClearBuffers( true, true );
 	
@@ -656,7 +653,7 @@ void CSourceVR::RenderViewDesktop()
 		m_Width, m_Height,
 		0, heightOffset,
 		outWidth-1, heightOffset + outHeight-1,
-		eyeWidth, eyeHeight
+		m_RenderWidth, m_RenderHeight
 	);
 
 	//Рендрем HUD и меню на рабочий стол если видно курсор (Оно надо?)
@@ -747,6 +744,9 @@ void CSourceVR::DoDistortionProcessing( vr::EVREye eEye )
 
 void CSourceVR::UpdatePoses()
 {
+	if(!m_bActive)
+		return;
+
 	vr::VRCompositor()->WaitGetPoses(m_Poses, vr::k_unMaxTrackedDeviceCount, NULL, 0);
 
 	//Вдруг background не сработает
@@ -787,8 +787,10 @@ bool CSourceVR::GetEyeProjectionMatrix ( VMatrix *pResult, vr::EVREye eEye, floa
 
 void CSourceVR::OverrideView( CViewSetup *pSetup )
 {
-	UpdatePoses();
+	PostPresent();
 
+	UpdatePoses();
+	
 	if( g_pVGuiSurface->IsCursorVisible() )
 		ProcessMenuInput();
 	
@@ -999,7 +1001,7 @@ void CSourceVR::PostPresent()
 	{
 		vr::VRCompositor()->Submit( vr::Eye_Left, &GetVRSystem()->m_SharedTextureHolder[vr::Eye_Left].m_VRTexture );
 		vr::VRCompositor()->Submit( vr::Eye_Right, &GetVRSystem()->m_SharedTextureHolder[vr::Eye_Right].m_VRTexture );
-		vr::VRCompositor()->PostPresentHandoff();
+		//vr::VRCompositor()->PostPresentHandoff();	
 	}
 }
 
@@ -1287,7 +1289,10 @@ void CSourceVR::CreateMove( float flInputSampleTime, CUserCmd* cmd )
     }
 
 	if( pPlayer->IsAlive() && ( m_RightControllerPosAbs.Length() != 0 ) )
+	{
+		//engine->SetViewAngles( viewangles ); //Движение игрока от головы наверно будет так отставать на один кадр
 		cmd->viewangles = viewangles;
+	}
 
 	vr::InputAnalogActionData_t analogActionData;
 

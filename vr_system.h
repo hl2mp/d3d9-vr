@@ -46,6 +46,7 @@ public:
 	void NextCreateTextureIs( int index );
 	int	GetNextCreateTextureIs() { return m_nextRTIs; };
 
+	void PrePresent();
 	void PostPresent( IDirect3DDevice9Ex *pD3D9 );
 	void StoreSharedTexture(int index, IDirect3DTexture9* pIDirect3DTexture9, HANDLE* pShared);
 
